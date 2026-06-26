@@ -11,7 +11,8 @@ import '../../core/theme/app_theme.dart';
 import '../../widgets/custom_button.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final String? initialRole;
+  const RegisterScreen({super.key, this.initialRole});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -19,7 +20,13 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormBuilderState>();
-  String _role = 'Seeker';
+  late String _role;
+
+  @override
+  void initState() {
+    super.initState();
+    _role = widget.initialRole ?? 'Seeker';
+  }
   bool _agree = false;
 
   void _submit() {

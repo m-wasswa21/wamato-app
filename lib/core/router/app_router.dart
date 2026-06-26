@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../bloc/auth/auth_cubit.dart';
 import '../../bloc/auth/auth_state.dart';
 import '../../navigation/main_navigation.dart';
+import '../../screens/auth/auth_gateway_screen.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/auth/register_screen.dart';
 import '../../screens/onboarding/onboarding_screen.dart';
@@ -44,7 +45,7 @@ GoRouter createRouter(AuthCubit authCubit) {
           return authState.onboardingSeen ? '/home' : '/onboarding';
         }
         // Allow browsing home as a guest, and auth/onboarding screens
-        if (onHome || onOnboarding || onAuth) return null;
+        if (onHome || onOnboarding || onAuth || loc == '/auth') return null;
         return '/onboarding';
       }
 
@@ -53,8 +54,12 @@ GoRouter createRouter(AuthCubit authCubit) {
     routes: [
       GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
       GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
+      GoRoute(path: '/auth', builder: (_, __) => const AuthGatewayScreen()),
       GoRoute(path: '/auth/login', builder: (_, __) => const LoginScreen()),
-      GoRoute(path: '/auth/register', builder: (_, __) => const RegisterScreen()),
+      GoRoute(
+        path: '/auth/register',
+        builder: (_, state) => RegisterScreen(initialRole: state.extra as String?),
+      ),
       GoRoute(path: '/home', builder: (_, __) => const MainNavigation()),
       GoRoute(
         path: '/property/:id',

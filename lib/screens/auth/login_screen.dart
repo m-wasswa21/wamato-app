@@ -115,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: GoogleFonts.urbanist(
                               color: AppColors.textSecondary, fontSize: 14)),
                       GestureDetector(
-                        onTap: () => context.go('/auth/register'),
+                        onTap: () => context.go('/auth'),
                         child: Text('Sign Up',
                             style: GoogleFonts.urbanist(
                                 color: AppColors.primary,
