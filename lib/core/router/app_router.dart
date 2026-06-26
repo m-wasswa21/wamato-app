@@ -27,10 +27,12 @@ GoRouter createRouter(AuthCubit authCubit) {
       final onAuth = loc.startsWith('/auth');
       final onHome = loc == '/home';
 
-      // Still checking token — stay on splash
-      if (authState is AuthInitial || authState is AuthLoading) {
+      // App cold-start — stay on splash until session check completes
+      if (authState is AuthInitial) {
         return onSplash ? null : '/splash';
       }
+      // API call in progress — stay on the current screen (spinner in UI)
+      if (authState is AuthLoading) return null;
 
       // Logged in — go straight to home from splash/onboarding/auth
       if (authState is AuthAuthenticated) {
