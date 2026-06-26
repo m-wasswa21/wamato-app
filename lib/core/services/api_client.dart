@@ -77,9 +77,23 @@ class ApiClient {
   Never _throw(DioException e) {
     final code = e.response?.statusCode ?? 0;
     final data = e.response?.data;
-    final msg = data is Map
-        ? (data['detail'] ?? e.message ?? 'Request failed').toString()
-        : (e.message ?? 'Request failed');
+    String msg;
+    if (data is Map) {
+      final detail = data['detail'];
+      if (detail is List && detail.isNotEmpty) {
+        // FastAPI validation error — extract first human-readable message
+        final first = detail.first;
+        String raw = (first is Map ? first['msg'] : detail.toString()).toString();
+        // FastAPI prefixes custom validators with "Value error, " — strip it
+        msg = raw.replaceFirst('Value error, ', '');
+      } else {
+        msg = (detail ?? e.message ?? 'Request failed').toString();
+      }
+    } else if (code == 0) {
+      msg = 'No internet connection. Please check your network.';
+    } else {
+      msg = e.message ?? 'Request failed';
+    }
     throw ApiException(code, msg);
   }
 }
