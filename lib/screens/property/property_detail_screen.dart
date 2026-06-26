@@ -25,8 +25,25 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   int _currentImage = 0;
   bool _saved = false;
   bool _savingInProgress = false;
+  Property? _fullProperty;
+  bool _loadingFull = true;
 
-  Property get p => widget.property;
+  Property get p => _fullProperty ?? widget.property;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFull();
+  }
+
+  Future<void> _loadFull() async {
+    try {
+      final full = await const PropertyRepository().getProperty(widget.property.id);
+      if (mounted) setState(() { _fullProperty = full; _loadingFull = false; });
+    } catch (_) {
+      if (mounted) setState(() => _loadingFull = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -226,8 +243,20 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     return Container(
       color: AppColors.white,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: _loadingFull ? [
+          const LinearProgressIndicator(
+            minHeight: 3,
+            backgroundColor: AppColors.border,
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
+          ..._buildContentChildren(),
+        ] : _buildContentChildren(),
+      ),
+    );
+  }
+
+  List<Widget> _buildContentChildren() {
+    return [
           // Price + title
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -319,9 +348,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           // Company contact
           _buildCompanyContact(),
           const SizedBox(height: 24),
-        ],
-      ),
-    );
+    ];
   }
 
   Widget _buildCompanyContact() {
@@ -571,10 +598,14 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
 
   Widget _buildAmenities() {
     final amenities = <Map<String, dynamic>>[];
-    if (p.hasSecurity) amenities.add({'icon': '🔒', 'label': 'Security'});
-    if (p.hasFurnishing) amenities.add({'icon': '🛋️', 'label': 'Furnished'});
-    if (p.hasInternet) amenities.add({'icon': '📶', 'label': 'Internet'});
-    if (p.hasSwimmingPool) amenities.add({'icon': '🏊', 'label': 'Pool'});
+    if (p.hasSecurity)    amenities.add({'icon': Icons.security_rounded,       'label': 'Security Guard'});
+    if (p.hasFurnishing)  amenities.add({'icon': Icons.chair_rounded,           'label': 'Furnished'});
+    if (p.hasInternet)    amenities.add({'icon': Icons.wifi_rounded,            'label': 'Internet / WiFi'});
+    if (p.hasSwimmingPool)amenities.add({'icon': Icons.pool_rounded,            'label': 'Swimming Pool'});
+    if (p.hasParking)     amenities.add({'icon': Icons.local_parking_rounded,   'label': 'Parking'});
+    if (p.hasGenerator)   amenities.add({'icon': Icons.bolt_rounded,            'label': 'Backup Power'});
+    if (p.hasSolar)       amenities.add({'icon': Icons.wb_sunny_rounded,        'label': 'Solar Power'});
+    if (p.hasWaterTank)   amenities.add({'icon': Icons.water_drop_rounded,      'label': 'Water Tank'});
 
     if (amenities.isEmpty) return const SizedBox.shrink();
 
@@ -603,8 +634,8 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(a['icon'] as String,
-                              style: const TextStyle(fontSize: 14)),
+                          Icon(a['icon'] as IconData,
+                              color: AppColors.secondary, size: 16),
                           const SizedBox(width: 6),
                           Text(a['label'] as String,
                               style: GoogleFonts.urbanist(

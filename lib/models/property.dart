@@ -28,6 +28,10 @@ class Property {
   final bool hasFurnishing;
   final bool hasInternet;
   final bool hasSwimmingPool;
+  final bool hasParking;
+  final bool hasGenerator;
+  final bool hasSolar;
+  final bool hasWaterTank;
   final double? latitude;
   final double? longitude;
   // Short-stay (Airbnb / Holiday) fields
@@ -94,6 +98,10 @@ class Property {
       hasFurnishing: j['has_furnishing'] as bool? ?? false,
       hasInternet: j['has_internet'] as bool? ?? false,
       hasSwimmingPool: j['has_swimming_pool'] as bool? ?? false,
+      hasParking: j['has_parking'] as bool? ?? (j['parking_spaces'] != null && (j['parking_spaces'] as int) > 0),
+      hasGenerator: j['has_generator'] as bool? ?? false,
+      hasSolar: j['has_solar'] as bool? ?? false,
+      hasWaterTank: j['has_water_tank'] as bool? ?? false,
       latitude: (j['latitude'] as num?)?.toDouble(),
       longitude: (j['longitude'] as num?)?.toDouble(),
       isShortStay: j['is_short_stay'] as bool? ?? false,
@@ -132,6 +140,10 @@ class Property {
     this.hasFurnishing = false,
     this.hasInternet = false,
     this.hasSwimmingPool = false,
+    this.hasParking = false,
+    this.hasGenerator = false,
+    this.hasSolar = false,
+    this.hasWaterTank = false,
     this.latitude,
     this.longitude,
     this.isShortStay = false,
