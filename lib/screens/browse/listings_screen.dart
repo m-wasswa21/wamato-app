@@ -42,7 +42,7 @@ class _ListingsScreenState extends State<ListingsScreen> {
   double _priceMax = 1500000000;
   bool _verifiedOnly = false;
   String _sortBy = 'Newest';
-  bool _gridView = true;
+  bool _gridView = false;
   bool _isLoading = true;
 
   List<Property> _allProperties = [];
@@ -395,7 +395,9 @@ class _ListingsScreenState extends State<ListingsScreen> {
   SliverAppBar _buildAppBar() {
     return SliverAppBar(
       pinned: true,
-      backgroundColor: AppColors.primary,
+      backgroundColor: AppColors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
       automaticallyImplyLeading: false,
       toolbarHeight: 64,
       flexibleSpace: SafeArea(
@@ -406,39 +408,41 @@ class _ListingsScreenState extends State<ListingsScreen> {
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: const BoxDecoration(
-                    color: AppColors.whiteFaint,
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFE0E0E0)),
                     shape: BoxShape.circle,
+                    color: Colors.white,
                   ),
                   child: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: AppColors.white,
-                      size: 16),
+                      Icons.arrow_back_rounded,
+                      color: Color(0xFF222222),
+                      size: 18),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Container(
-                  height: 42,
-                  decoration: const BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius:
-                        BorderRadius.all(Radius.circular(12)),
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextField(
                     controller: _searchCtrl,
                     onChanged: (_) => _filter(),
+                    style: const TextStyle(
+                        fontSize: 14, color: Color(0xFF222222)),
                     decoration: InputDecoration(
                       hintText: 'Search in ${widget.title}…',
                       hintStyle: GoogleFonts.urbanist(
-                          color: AppColors.textTertiary,
+                          color: const Color(0xFF999999),
                           fontSize: 13),
                       prefixIcon: const Icon(
                           Icons.search_rounded,
-                          color: AppColors.textTertiary,
-                          size: 20),
+                          color: Color(0xFF999999),
+                          size: 18),
                       suffixIcon: _searchCtrl.text.isNotEmpty
                           ? GestureDetector(
                               onTap: () {
@@ -447,15 +451,15 @@ class _ListingsScreenState extends State<ListingsScreen> {
                               },
                               child: const Icon(
                                   Icons.clear_rounded,
-                                  size: 18,
-                                  color: AppColors.textTertiary),
+                                  size: 16,
+                                  color: Color(0xFF999999)),
                             )
                           : null,
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       contentPadding:
-                          const EdgeInsets.symmetric(vertical: 12),
+                          const EdgeInsets.symmetric(vertical: 13),
                       isDense: true,
                     ),
                   ),
@@ -469,14 +473,15 @@ class _ListingsScreenState extends State<ListingsScreen> {
                       builder: (_) => const MapScreen()),
                 ),
                 child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: const BoxDecoration(
-                    color: AppColors.whiteFaint,
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFE0E0E0)),
                     shape: BoxShape.circle,
+                    color: Colors.white,
                   ),
-                  child: const Icon(Icons.map_rounded,
-                      color: AppColors.white, size: 18),
+                  child: const Icon(Icons.map_outlined,
+                      color: Color(0xFF222222), size: 18),
                 ),
               ),
             ],
@@ -517,26 +522,29 @@ class _ListingsScreenState extends State<ListingsScreen> {
         setState(() => _status = value);
         _filter();
       },
-      child: Container(
-        margin: const EdgeInsets.only(right: 8),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: active ? AppColors.primary : AppColors.surface,
-          borderRadius:
-              const BorderRadius.all(Radius.circular(20)),
-          border: Border.all(
-              color:
-                  active ? AppColors.primary : AppColors.border),
-        ),
-        child: Center(
-          child: Text(label,
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: active
-                      ? AppColors.white
-                      : AppColors.textSecondary)),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(label,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                    color: active
+                        ? const Color(0xFF222222)
+                        : const Color(0xFF717171))),
+            const SizedBox(height: 4),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              height: 2,
+              width: active ? 24 : 0,
+              decoration: BoxDecoration(
+                color: const Color(0xFF222222),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ],
         ),
       ),
     );

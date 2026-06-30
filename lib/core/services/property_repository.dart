@@ -110,6 +110,12 @@ class PropertyRepository {
     return (res['items'] as List).map((j) => Property.fromJson(j)).toList();
   }
 
+  Future<int> getMyListingsCount() async {
+    final client = await _authClient;
+    final res = await client.get('/api/v1/properties/my', {'page': '1', 'size': '1'});
+    return (res['total'] as num?)?.toInt() ?? 0;
+  }
+
   Future<List<Property>> getSavedProperties({int page = 1, int size = 20}) async {
     final client = await _authClient;
     final res = await client.get('/api/v1/users/me/saved-properties', {
@@ -117,6 +123,13 @@ class PropertyRepository {
       'size': size.toString(),
     });
     return (res['items'] as List).map((j) => Property.fromJson(j)).toList();
+  }
+
+  Future<int> getSavedPropertiesCount() async {
+    final client = await _authClient;
+    final res = await client
+        .get('/api/v1/users/me/saved-properties', {'page': '1', 'size': '1'});
+    return (res['total'] as num?)?.toInt() ?? 0;
   }
 
   Future<void> saveProperty(String propertyId) async {
@@ -127,6 +140,11 @@ class PropertyRepository {
   Future<void> unsaveProperty(String propertyId) async {
     final client = await _authClient;
     await client.delete('/api/v1/users/me/saved-properties/$propertyId');
+  }
+
+  Future<void> updateProperty(String propertyId, Map<String, dynamic> fields) async {
+    final client = await _authClient;
+    await client.patch('/api/v1/properties/$propertyId', fields);
   }
 
   Future<void> deleteProperty(String propertyId) async {

@@ -42,12 +42,18 @@ class PropertyCubit extends Cubit<PropertyState> {
   Future<List<Property>> fetchByFilter({
     String? status,
     String? type,
+    String? district,
     bool? isShortStay,
+    String? query,
   }) async {
     try {
+      if (query != null && query.isNotEmpty) {
+        return await _repo.search(query);
+      }
       return await _repo.getProperties(
         status: status,
         type: type,
+        district: district,
         isShortStay: isShortStay,
         size: 50,
       );

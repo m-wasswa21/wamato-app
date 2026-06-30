@@ -5,6 +5,7 @@ import '../../core/services/property_repository.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
+import '../payment/payment_sheet.dart';
 
 class AddPropertyScreen extends StatefulWidget {
   const AddPropertyScreen({super.key});
@@ -110,6 +111,21 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
       return;
     }
 
+    // Show payment sheet — on success, create the property
+    final packageAmount =
+        AppConstants.listingPackages[_selectedPackage] ?? 20000;
+
+    await showPaymentSheet(
+      context: context,
+      amount: packageAmount,
+      type: 'listing_package',
+      description: '$_selectedPackage — $title',
+      onSuccess: () => _createProperty(title, price, area, desc),
+    );
+  }
+
+  Future<void> _createProperty(
+      String title, double price, String area, String desc) async {
     setState(() => _submitting = true);
     try {
       await const PropertyRepository().createProperty(
@@ -143,7 +159,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Submission failed. Try again.',
+        content: Text('Submission failed: $e',
             style: GoogleFonts.urbanist(color: AppColors.white)),
         backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,

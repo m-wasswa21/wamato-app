@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../bloc/auth/auth_cubit.dart';
 import '../../bloc/auth/auth_state.dart';
+import '../../bloc/saved/saved_cubit.dart';
 import '../../core/services/property_repository.dart';
 import '../../core/theme/app_theme.dart';
 import '../auth/login_screen.dart';
@@ -21,7 +22,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   int _listingsCount = 0;
-  int _savedCount = 0;
   bool _loadingStats = true;
 
   @override
@@ -31,19 +31,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadStats() async {
+    setState(() => _loadingStats = true);
     try {
-      final repo = const PropertyRepository();
-      final results = await Future.wait([
-        repo.getMyListings(size: 1),
-        repo.getSavedProperties(size: 1),
-      ]);
-      if (mounted) {
-        setState(() {
-          _listingsCount = results[0].length;
-          _savedCount = results[1].length;
-          _loadingStats = false;
-        });
-      }
+      final count = await const PropertyRepository().getMyListingsCount();
+      if (mounted) setState(() { _listingsCount = count; _loadingStats = false; });
     } catch (_) {
       if (mounted) setState(() => _loadingStats = false);
     }
@@ -54,6 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, authState) {
         final user = authState is AuthAuthenticated ? authState : null;
+        final savedCount = context.watch<SavedCubit>().state.length;
         return Scaffold(
           backgroundColor: AppColors.surface,
           appBar: AppBar(
@@ -89,7 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _MenuItem(
                       Icons.favorite_rounded,
                       'Saved Properties',
-                      _loadingStats ? '' : '$_savedCount Saved',
+                      '$savedCount Saved',
                       () => Navigator.push(context,
                           MaterialPageRoute(builder: (_) => const SavedPropertiesScreen())),
                     ),
@@ -259,19 +251,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStats() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          _statBox(_loadingStats ? '…' : '$_listingsCount', 'Listings',
-              Icons.home_rounded),
-          const SizedBox(width: 12),
-          _statBox(_loadingStats ? '…' : '$_savedCount', 'Saved',
-              Icons.favorite_rounded),
-          const SizedBox(width: 12),
-          _statBox('0', 'Unlocked', Icons.lock_open_rounded),
-        ],
-      ),
+    return BlocBuilder<SavedCubit, Set<String>>(
+      builder: (context, savedIds) {
+        final savedCount = savedIds.length;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              _statBox(_loadingStats ? '…' : '$_listingsCount', 'Listings',
+                  Icons.home_rounded),
+              const SizedBox(width: 12),
+              _statBox('$savedCount', 'Saved', Icons.favorite_rounded),
+              const SizedBox(width: 12),
+              _statBox('0', 'Unlocked', Icons.lock_open_rounded),
+            ],
+          ),
+        );
+      },
     );
   }
 

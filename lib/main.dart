@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'bloc/auth/auth_cubit.dart';
+import 'bloc/auth/auth_state.dart';
 import 'bloc/property/property_cubit.dart';
+import 'bloc/saved/saved_cubit.dart';
 import 'core/router/app_router.dart';
 import 'core/services/auth_repository.dart';
 import 'core/services/property_repository.dart';
@@ -32,12 +34,14 @@ class WamatoApp extends StatefulWidget {
 class _WamatoAppState extends State<WamatoApp> {
   late final AuthCubit _authCubit;
   late final PropertyCubit _propertyCubit;
+  late final SavedCubit _savedCubit;
 
   @override
   void initState() {
     super.initState();
     _authCubit = AuthCubit(AuthRepository());
     _propertyCubit = PropertyCubit(const PropertyRepository());
+    _savedCubit = SavedCubit();
     // Restore token and kick off property load in parallel
     _authCubit.checkSession();
     _propertyCubit.loadHome();
@@ -47,6 +51,7 @@ class _WamatoAppState extends State<WamatoApp> {
   void dispose() {
     _authCubit.close();
     _propertyCubit.close();
+    _savedCubit.close();
     super.dispose();
   }
 
@@ -56,8 +61,19 @@ class _WamatoAppState extends State<WamatoApp> {
       providers: [
         BlocProvider.value(value: _authCubit),
         BlocProvider.value(value: _propertyCubit),
+        BlocProvider.value(value: _savedCubit),
       ],
-      child: _RouterWrapper(authCubit: _authCubit),
+      child: BlocListener<AuthCubit, AuthState>(
+        bloc: _authCubit,
+        listener: (_, state) {
+          if (state is AuthAuthenticated) {
+            _savedCubit.load();
+          } else if (state is AuthUnauthenticated) {
+            _savedCubit.clear();
+          }
+        },
+        child: _RouterWrapper(authCubit: _authCubit),
+      ),
     );
   }
 }
