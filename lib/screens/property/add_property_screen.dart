@@ -1,5 +1,7 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/services/property_repository.dart';
 import '../../core/theme/app_theme.dart';
@@ -30,6 +32,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
   int _bedrooms = 2;
   int _bathrooms = 1;
   bool _submitting = false;
+  List<XFile> _photos = [];
 
   // Amenity toggles
   bool _hasSecurity = false;
@@ -128,7 +131,8 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
       String title, double price, String area, String desc) async {
     setState(() => _submitting = true);
     try {
-      await const PropertyRepository().createProperty(
+      final repo = const PropertyRepository();
+      final property = await repo.createProperty(
         title: title,
         type: _apiType(_selectedType),
         status: _apiStatus(_selectedStatus),
@@ -146,6 +150,12 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
         hasGenerator: _hasGenerator,
         listingPackage: _apiPackage(_selectedPackage),
       );
+
+      // Upload photos if any were selected
+      if (_photos.isNotEmpty) {
+        await repo.uploadPhotos(property.id, _photos);
+      }
+
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -428,49 +438,151 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
         .toList();
   }
 
+  Future<void> _pickPhotos() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickMultiImage(imageQuality: 85, limit: 10);
+    if (picked.isNotEmpty) {
+      setState(() {
+        // Merge, avoid duplicates by path, cap at 10
+        final existing = _photos.map((f) => f.path).toSet();
+        for (final f in picked) {
+          if (!existing.contains(f.path) && _photos.length < 10) {
+            _photos.add(f);
+          }
+        }
+      });
+    }
+  }
+
+  Future<void> _pickFromCamera() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+        source: ImageSource.camera, imageQuality: 85);
+    if (picked != null && _photos.length < 10) {
+      setState(() => _photos.add(picked));
+    }
+  }
+
   Widget _buildStep3() {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _sectionTitle('Property Photos'),
-          const SizedBox(height: 6),
-          Text('Add at least 3 clear photos of the property',
+          const SizedBox(height: 4),
+          Text('Add up to 10 clear photos • First photo is the cover',
               style: GoogleFonts.urbanist(
                   fontSize: 13, color: AppColors.textSecondary)),
-          const SizedBox(height: 20),
-          GestureDetector(
-            onTap: () {},
-            child: Container(
-              height: 160,
+          const SizedBox(height: 16),
+
+          // Add photo buttons
+          Row(
+            children: [
+              Expanded(
+                child: _photoSourceBtn(
+                  icon: Icons.photo_library_rounded,
+                  label: 'Gallery',
+                  onTap: _pickPhotos,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _photoSourceBtn(
+                  icon: Icons.camera_alt_rounded,
+                  label: 'Camera',
+                  onTap: _pickFromCamera,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Photo grid
+          if (_photos.isEmpty)
+            Container(
+              height: 140,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: AppColors.secondary.withOpacity(0.06),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                    color: AppColors.secondary.withOpacity(0.3),
-                    style: BorderStyle.solid,
-                    width: 1.5),
+                color: const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.add_photo_alternate_rounded,
-                      color: AppColors.secondary, size: 44),
-                  const SizedBox(height: 10),
-                  Text('Tap to browse images',
+                  const Icon(Icons.image_outlined,
+                      color: AppColors.textTertiary, size: 40),
+                  const SizedBox(height: 8),
+                  Text('No photos added yet',
                       style: GoogleFonts.urbanist(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.secondary)),
-                  Text('PNG, JPG, WEBP supported',
-                      style: GoogleFonts.urbanist(
-                          fontSize: 12, color: AppColors.textTertiary)),
+                          fontSize: 13, color: AppColors.textTertiary)),
+                ],
+              ),
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                childAspectRatio: 1,
+              ),
+              itemCount: _photos.length,
+              itemBuilder: (_, i) => Stack(
+                fit: StackFit.expand,
+                children: [
+                  _buildLocalImage(i),
+                  // Cover badge on first photo
+                  if (i == 0)
+                    Positioned(
+                      bottom: 4,
+                      left: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text('Cover',
+                            style: GoogleFonts.urbanist(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white)),
+                      ),
+                    ),
+                  // Remove button
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: GestureDetector(
+                      onTap: () => setState(() => _photos.removeAt(i)),
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: const BoxDecoration(
+                          color: Colors.black54,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.close_rounded,
+                            color: Colors.white, size: 14),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 20),
+
+          const SizedBox(height: 8),
+          if (_photos.isNotEmpty)
+            Text('${_photos.length}/10 photos added',
+                style: GoogleFonts.urbanist(
+                    fontSize: 12, color: AppColors.textSecondary)),
+          const SizedBox(height: 16),
+
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -494,6 +606,53 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLocalImage(int i) {
+    return FutureBuilder<Uint8List>(
+      future: _photos[i].readAsBytes(),
+      builder: (_, snap) {
+        if (snap.hasData) {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.memory(snap.data!, fit: BoxFit.cover),
+          );
+        }
+        return Container(
+            decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(10)));
+      },
+    );
+  }
+
+  Widget _photoSourceBtn({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: AppColors.primary, size: 28),
+            const SizedBox(height: 6),
+            Text(label,
+                style: GoogleFonts.urbanist(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary)),
+          ],
+        ),
       ),
     );
   }

@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
 import '../../models/property.dart';
@@ -150,5 +152,18 @@ class PropertyRepository {
   Future<void> deleteProperty(String propertyId) async {
     final client = await _authClient;
     await client.delete('/api/v1/properties/$propertyId');
+  }
+
+  Future<void> uploadPhotos(String propertyId, List<XFile> photos) async {
+    if (photos.isEmpty) return;
+    final client = await _authClient;
+    final files = await Future.wait(
+      photos.map((f) async => MultipartFile.fromBytes(
+            await f.readAsBytes(),
+            filename: f.name,
+          )),
+    );
+    final form = FormData.fromMap({'files': files});
+    await client.postMultipart('/api/v1/properties/$propertyId/photos', form);
   }
 }

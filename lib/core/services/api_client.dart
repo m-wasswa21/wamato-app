@@ -65,6 +65,19 @@ class ApiClient {
     }
   }
 
+  Future<dynamic> postMultipart(String path, FormData formData) async {
+    try {
+      final opts = Options(headers: {
+        if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+        'Content-Type': 'multipart/form-data',
+      });
+      final res = await _dio.post(path, data: formData, options: opts);
+      return res.data;
+    } on DioException catch (e) {
+      _throw(e);
+    }
+  }
+
   Future<dynamic> delete(String path) async {
     try {
       final res = await _dio.delete(path, options: _opts);
